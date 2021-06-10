@@ -1,0 +1,6 @@
+#!/bin/bash
+
+bn=$(basename $1)
+statfile="results/${bn}.stat"
+
+./ramulator configs/DDR3-config.cfg --mode=cpu --stats "$statfile" "$@"
