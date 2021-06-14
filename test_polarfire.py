@@ -46,6 +46,25 @@ def gen_stream(cb, n, rw):
   for i in range(w):
     cb((r+i)*64, False, r+i)
 
+def gen_stream_chop(cb, n, rw):
+  l = 1920*3
+  r = int(n * rw)
+  w = n - r
+  a = 0 # address
+  isread = False
+  while(w>0 or r>0):
+    isread = not isread
+    for i in range(l):
+      cb(a, isread, a)
+      a += 64
+      if isread:
+        r -= 1
+        if r<=0:
+          break
+      else:
+        w -= 1
+        if w<=0:
+          break
 
 def main(n_reqs, rw, rec):
   trace_names = ['ramulator']
@@ -71,11 +90,20 @@ def main(n_reqs, rw, rec):
   traces.append(tmps)
   print 'Stream trace created'
 
+  tmps = {name: tempfile.NamedTemporaryFile(prefix='streamchop-') for name in trace_names}
+  gen_stream_chop(make_cb(tmps), n_reqs, rw)
+  for f in tmps.itervalues():
+    f.file.seek(0)
+  traces.append(tmps)
+  print 'Stream chopped trace created'
+
   if rec:
       for name, tmpf in traces[0].iteritems():
         shutil.copy(tmpf.name, './%s-random.trace' % name)
       for name, tmpf in traces[1].iteritems():
         shutil.copy(tmpf.name, './%s-stream.trace' % name)
+      for name, tmpf in traces[2].iteritems():
+        shutil.copy(tmpf.name, './%s-streamchop.trace' % name)
 
   sims = [Ramulator()]
   cnt = len(traces) * len(sims)
